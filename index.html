@@ -400,6 +400,19 @@
       transition: color .15s;
     }
     .modal-close:hover { color: var(--text); }
+    .modal-gear {
+      background: none; border: 1px solid var(--border);
+      color: var(--text-dim); cursor: pointer;
+      font-size: 13px; padding: 3px 7px; border-radius: 6px;
+      transition: color .15s, border-color .15s;
+    }
+    .modal-gear:hover { color: var(--purple-light); border-color: var(--purple-mid); }
+    .modal-gear.active { color: var(--purple-light); border-color: var(--purple-mid); background: var(--purple-faint); }
+    .edit-actions {
+      display: flex; flex-direction: column; gap: 7px;
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
 
     /* ── Form ─────────────────────────────── */
     .form-field { margin-bottom: 14px; }
@@ -634,10 +647,14 @@
   <div class="modal">
     <div class="modal-head">
       <span class="modal-title" id="mDayTitle">Day</span>
-      <button class="modal-close" onclick="closeM('mDay')">×</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="modal-gear hidden" id="mDayGear" onclick="toggleDayEdit()">⚙</button>
+        <button class="modal-close" onclick="closeM('mDay')">×</button>
+      </div>
     </div>
     <div id="mDayBody"></div>
     <div class="day-actions" id="mDayActions"></div>
+    <div class="edit-actions hidden" id="mDayEdit"></div>
   </div>
 </div>
 
@@ -1182,30 +1199,62 @@ function openDay(ds) {
   }
   document.getElementById('mDayBody').innerHTML = rows;
 
-  // Actions
+  // Find if this day belongs to a *logged* (not predicted) period
   const period = db.periods.find(p => {
     const pE = p.end || addDays(p.start, db.settings.periodLength - 1);
     return ds >= p.start && ds <= pE;
   });
 
-  let acts = '';
-  if (period) {
-    if (period.start === ds) {
-      acts += `<button class="btn btn-ghost" onclick="removePeriodByStart('${ds}')">Remove period entry</button>`;
-    }
-    if (!period.end) {
-      acts += `<button class="btn btn-rose" onclick="setEnd('${period.start}','${ds}')">Set today as period end</button>`;
-    } else if (period.end === ds) {
-      acts += `<button class="btn btn-ghost" onclick="clearEnd('${period.start}')">Remove period end</button>`;
-    }
-  } else {
-    acts += `<button class="btn btn-rose" onclick="setStart('${ds}')">Log as period start</button>`;
-    if (ds < TODAY) {
+  const isPast   = ds < TODAY;
+  const hasPhase = !!info;
+
+  let acts     = ''; // shown immediately
+  let editActs = ''; // shown behind gear
+
+  if (isPast) {
+    if (period) {
+      // Logged period day — edits behind gear only
+      if (period.start === ds)
+        editActs += `<button class="btn btn-ghost" onclick="removePeriodByStart('${ds}')">Remove period entry</button>`;
+      if (!period.end)
+        editActs += `<button class="btn btn-rose" onclick="setEnd('${period.start}','${ds}')">Set as period end</button>`;
+      else if (period.end === ds)
+        editActs += `<button class="btn btn-ghost" onclick="clearEnd('${period.start}')">Remove period end</button>`;
+    } else if (!hasPhase) {
+      // Unphased past day — allow historical entry
       acts += `<button class="btn btn-ghost" onclick="openAddPeriod('${ds}')">Add period starting here…</button>`;
     }
+    // Calculated-phase past days (follicular, luteal, etc.) → no actions
+  } else {
+    // Today or future — full quick-log behaviour
+    if (period) {
+      if (period.start === ds)
+        editActs += `<button class="btn btn-ghost" onclick="removePeriodByStart('${ds}')">Remove period entry</button>`;
+      if (!period.end)
+        acts += `<button class="btn btn-rose" onclick="setEnd('${period.start}','${ds}')">Set as period end</button>`;
+      else if (period.end === ds)
+        editActs += `<button class="btn btn-ghost" onclick="clearEnd('${period.start}')">Remove period end</button>`;
+    } else {
+      acts += `<button class="btn btn-rose" onclick="setStart('${ds}')">Log as period start</button>`;
+    }
   }
+
+  const gear = document.getElementById('mDayGear');
+  const editEl = document.getElementById('mDayEdit');
+  gear.classList.toggle('hidden', !editActs);
+  gear.classList.remove('active');
+  editEl.classList.add('hidden');
+  editEl.innerHTML = editActs;
+
   document.getElementById('mDayActions').innerHTML = acts;
   openM('mDay');
+}
+
+function toggleDayEdit() {
+  const gear  = document.getElementById('mDayGear');
+  const panel = document.getElementById('mDayEdit');
+  const open  = panel.classList.toggle('hidden');
+  gear.classList.toggle('active', !open);
 }
 
 function row(k, v) {
