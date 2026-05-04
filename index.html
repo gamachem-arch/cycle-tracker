@@ -85,27 +85,22 @@
       position: sticky; top: 53px; z-index: 89;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 10px 20px;
-      display: flex; gap: 0;
-      overflow-x: auto;
-      scrollbar-width: none;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
     }
-    .status-bar::-webkit-scrollbar { display: none; }
     .status-item {
-      display: flex; flex-direction: column; gap: 3px;
-      padding: 0 20px 0 0; min-width: 0;
-      flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 7px 10px; min-width: 0;
     }
-    .status-item + .status-item {
-      padding-left: 20px;
-      border-left: 1px solid var(--border);
-    }
+    .status-item:not(:nth-child(3n)) { border-right: 1px solid var(--border); }
+    .status-item:nth-child(-n+3)     { border-bottom: 1px solid var(--border); }
     .status-label {
-      font-size: 9px; text-transform: uppercase;
-      letter-spacing: .9px; color: var(--text-dim); white-space: nowrap;
+      font-size: 8px; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--text-dim); white-space: nowrap;
     }
     .status-value {
-      font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap;
+      font-size: 11px; font-weight: 500; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .status-value.accent { color: var(--purple-light); }
     .status-value.period-col { color: #f472b6; }
@@ -113,7 +108,7 @@
     /* ── Calendar container ───────────────── */
     .calendar-wrap {
       max-width: 1100px; margin: 0 auto;
-      padding: 22px 20px 110px;
+      padding: 22px 20px 160px;
     }
 
     /* ── Year nav ─────────────────────────── */
@@ -191,10 +186,39 @@
 
     /* ── Months grid ──────────────────────── */
     .months-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── Month sections (collapsible) ────── */
+    .months-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; cursor: pointer; user-select: none;
+      transition: border-color .15s, background .15s;
+    }
+    .months-section-header:hover { border-color: var(--border-light); background: var(--surface2); }
+    .months-section-info { display: flex; flex-direction: column; gap: 1px; }
+    .months-section-title { font-size: 12px; font-weight: 600; color: var(--text); }
+    .months-section-count { font-size: 10px; color: var(--text-dim); }
+    .months-section-toggle {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 500; color: var(--purple-light);
+    }
+    .ms-chevron {
+      display: inline-block; transition: transform .2s;
+      font-style: normal; font-size: 13px;
+    }
+    .months-section-body {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-      gap: 16px;
+      gap: 12px;
+      margin-top: 4px;
     }
+    .months-section.collapsed .months-section-body { display: none; }
+    .months-section.collapsed .ms-chevron { transform: rotate(-90deg); }
 
     /* ── Month card ───────────────────────── */
     .month-card {
@@ -243,12 +267,13 @@
     }
 
     /* today indicator */
-    .day.today .day-num { font-weight: 700; }
-    .day.today::after {
-      content: ''; position: absolute; bottom: 3px; left: 50%;
-      transform: translateX(-50%);
-      width: 3px; height: 3px; border-radius: 50%;
-      background: var(--today-dot);
+    .day.today .day-num { font-weight: 800; }
+    .day.today {
+      box-shadow: 0 0 0 2px var(--purple-light), 0 0 10px rgba(167,139,250,.35);
+      z-index: 2;
+    }
+    .past-month .day.today {
+      box-shadow: 0 0 0 2px var(--purple-light), 0 0 10px rgba(167,139,250,.4);
     }
 
     /* phase colouring — current/past months */
@@ -297,7 +322,7 @@
 
     /* ── Legend FAB ───────────────────────── */
     .legend-fab {
-      position: fixed; bottom: 72px; right: 16px; z-index: 88;
+      position: fixed; bottom: 100px; right: 16px; z-index: 88;
       background: var(--surface2); border: 1px solid var(--border-light);
       color: var(--purple-light); border-radius: 20px;
       padding: 7px 13px 7px 10px;
@@ -353,16 +378,27 @@
 
     /* ── Quick Log Bar ────────────────────── */
     .quick-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
-      background: var(--surface); border-top: 1px solid var(--border);
-      padding: 12px 20px;
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      position: fixed;
+      bottom: 28px;
+      left: 14px; right: 14px; z-index: 90;
+      background: var(--surface2);
+      border: 1px solid var(--border-light);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
     }
     .quick-label {
       font-size: 10px; text-transform: uppercase; letter-spacing: .8px;
       color: var(--text-dim); flex-shrink: 0;
     }
     .quick-spacer { flex: 1; }
+    .btn-period-end {
+      background: var(--period); color: #fff;
+      border: none; font-weight: 600;
+      flex: 1; justify-content: center;
+    }
+    .btn-period-end:hover { background: #c73d6a; }
 
     /* ── Buttons ──────────────────────────── */
     .btn {
@@ -521,7 +557,7 @@
     .hidden { display: none !important; }
 
     @media (max-width: 520px) {
-      .months-grid { grid-template-columns: 1fr; }
+      .months-section-body { grid-template-columns: 1fr; }
       .legend { gap: 6px 12px; }
     }
   </style>
@@ -578,7 +614,7 @@
      CALENDAR
 ═══════════════════════════════════════════════ -->
 <main class="calendar-wrap">
-  <div class="year-row">
+  <div class="year-row hidden" id="yearRow">
     <div class="year-nav">
       <button class="year-nav-btn" onclick="changeYear(-1)">‹</button>
       <span class="year-label" id="yearLabel">2025</span>
@@ -586,16 +622,6 @@
     </div>
   </div>
 
-  <div class="legend">
-    <div class="legend-item" onclick="openPhaseInfo('period-actual')"><div class="legend-pip period-actual"></div><span class="legend-text">🩸 Period</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('period-predicted')"><div class="legend-pip period-predicted"></div><span class="legend-text">🩸 Predicted period</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('ovulation')"><div class="legend-pip ovulation"></div><span class="legend-text">✨ Ovulation day</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('ovulation-window')"><div class="legend-pip ovulation-window"></div><span class="legend-text">🌸 Ovulation window</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('high-libido')"><div class="legend-pip high-libido"></div><span class="legend-text">🔥 High libido</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('follicular')"><div class="legend-pip follicular"></div><span class="legend-text">🌱 Follicular</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('luteal')"><div class="legend-pip luteal"></div><span class="legend-text">🍂 Luteal</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('pms')"><div class="legend-pip pms"></div><span class="legend-text">🌩️ PMS window</span></div>
-  </div>
 
   <div class="months-grid" id="monthsGrid"></div>
 </main>
@@ -606,7 +632,7 @@
 <div class="quick-bar">
   <span class="quick-label">Log</span>
   <button class="btn btn-rose" id="btnStart" onclick="quickStart()">● Period Start</button>
-  <button class="btn btn-ghost hidden" id="btnEnd" onclick="quickEnd()">◎ Period End — Today</button>
+  <button class="btn btn-period-end hidden" id="btnEnd" onclick="quickEnd()">◎ End Period Today</button>
   <button class="btn btn-ghost" onclick="openAddPeriod()">+ Add Past Period</button>
 </div>
 
@@ -948,13 +974,70 @@ const DOWS   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
 function render() {
   document.getElementById('yearLabel').textContent = currentYear;
-  const map = buildMap(currentYear);
+  const map  = buildMap(currentYear);
   const grid = document.getElementById('monthsGrid');
   const now  = new Date();
-  grid.innerHTML = '';
-  for (let m=0; m<12; m++) grid.appendChild(renderMonth(m, map, now));
+  const isCurYear = currentYear === now.getFullYear();
+  const curMon    = now.getMonth();
+  grid.innerHTML  = '';
+
+  if (isCurYear) {
+    // Past months — collapsed by default
+    if (curMon > 0) {
+      const sec = makeSectionEl(
+        MONTHS[0].slice(0,3) + ' – ' + MONTHS[curMon-1].slice(0,3),
+        curMon, 'past'
+      );
+      for (let m = 0; m < curMon; m++) sec.body.appendChild(renderMonth(m, map, now));
+      grid.appendChild(sec.el);
+    }
+
+    // Current month — always visible, no wrapper
+    grid.appendChild(renderMonth(curMon, map, now));
+
+    // Future months — collapsed by default
+    if (curMon < 11) {
+      const sec = makeSectionEl(
+        MONTHS[curMon+1].slice(0,3) + ' – ' + MONTHS[11].slice(0,3),
+        11 - curMon, 'future'
+      );
+      for (let m = curMon + 1; m < 12; m++) sec.body.appendChild(renderMonth(m, map, now));
+      grid.appendChild(sec.el);
+    }
+  } else {
+    for (let m = 0; m < 12; m++) grid.appendChild(renderMonth(m, map, now));
+  }
+
   updateStatus(map);
   syncQuickBtns();
+  syncYearNav();
+}
+
+function makeSectionEl(label, count, type) {
+  const el = document.createElement('div');
+  el.className = `months-section collapsed`;
+  el.id = `section-${type}`;
+  el.innerHTML = `
+    <div class="months-section-header" onclick="toggleSection('section-${type}')">
+      <div class="months-section-info">
+        <span class="months-section-title">${type === 'past' ? '↑ ' : '↓ '}${label}</span>
+        <span class="months-section-count">${count} month${count !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="months-section-toggle">
+        <span class="ms-toggle-txt">Show</span>
+        <span class="ms-chevron">⌄</span>
+      </div>
+    </div>
+    <div class="months-section-body"></div>
+  `;
+  return { el, body: el.querySelector('.months-section-body') };
+}
+
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  el.querySelector('.ms-toggle-txt').textContent = collapsed ? 'Show' : 'Hide';
 }
 
 const ABBR = {
@@ -1061,8 +1144,14 @@ function updateStatus(map) {
     menstrual:'Menstrual', follicular:'Follicular',
     ovulation:'Ovulation', fertile:'Fertile', luteal:'Luteal', pms:'PMS'
   };
-  document.getElementById('sPhase').textContent =
-    todayInfo?.phase ? (phaseNames[todayInfo.phase] || todayInfo.phase) : '—';
+  if (todayInfo?.phase) {
+    const emoji = todayInfo.cls ? (EMOJI[todayInfo.cls] || '') : '';
+    const name  = phaseNames[todayInfo.phase] || todayInfo.phase;
+    document.getElementById('sPhase').innerHTML =
+      `${emoji} <span class="phase-badge phase-${todayInfo.phase}" style="font-size:9px;padding:1px 6px;vertical-align:middle">${name}</span>`;
+  } else {
+    document.getElementById('sPhase').textContent = '—';
+  }
 
   const preds = predictions(3);
   if (preds.length) {
@@ -1103,11 +1192,27 @@ function quickStart() {
 function quickEnd() {
   const last = lastPeriod();
   if (!last || last.end) return;
+  const started = dispDate(last.start);
+  if (!confirm(`End your period today?\n\nStarted: ${started}\nEnding: ${dispDate(TODAY)}`)) return;
   last.end = TODAY;
   persist(); render();
 }
 
 // ─── Year nav ─────────────────────────────────────────────────────────────────
+
+function syncYearNav() {
+  const thisYear = new Date().getFullYear();
+  const hasOtherYears = db.periods.some(p => {
+    const y = parseInt(p.start.slice(0, 4), 10);
+    return y !== thisYear;
+  });
+  const row = document.getElementById('yearRow');
+  row.classList.toggle('hidden', !hasOtherYears);
+  // If year nav just became hidden, snap back to current year
+  if (!hasOtherYears && currentYear !== thisYear) {
+    currentYear = thisYear;
+  }
+}
 
 function changeYear(d) { currentYear += d; render(); }
 
@@ -1520,13 +1625,8 @@ function closeLegendSheet(e) {
   }
 }
 
-// Show FAB only when the inline legend has scrolled out of view
-const legendFab = document.getElementById('legendFab');
-const legendEl  = document.querySelector('.legend');
-new IntersectionObserver(
-  ([entry]) => legendFab.classList.toggle('hidden', entry.isIntersecting),
-  { threshold: 0.1 }
-).observe(legendEl);
+// Legend FAB is always visible
+document.getElementById('legendFab').classList.remove('hidden');
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
