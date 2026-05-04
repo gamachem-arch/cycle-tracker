@@ -104,6 +104,8 @@
     }
     .status-value.accent { color: var(--purple-light); }
     .status-value.period-col { color: #f472b6; }
+    .status-value.late-col { color: #fb923c; }
+    .status-label.late-label { color: #fb923c; }
 
     /* ── Calendar container ───────────────── */
     .calendar-wrap {
@@ -1208,8 +1210,20 @@ function updateStatus(map) {
   const preds = predictions(3);
   if (preds.length) {
     const next = preds[0];
-    document.getElementById('sNextPeriod').textContent =
-      `${dispDate(next.start)} · ${relDate(next.start)}`;
+    const daysLate = diffDays(next.start, TODAY);
+    const nextPeriodEl = document.getElementById('sNextPeriod');
+    const nextLabelEl  = nextPeriodEl.previousElementSibling;
+    if (daysLate > 0) {
+      nextLabelEl.textContent = 'Period Late';
+      nextLabelEl.classList.add('late-label');
+      nextPeriodEl.className = 'status-value late-col';
+      nextPeriodEl.textContent = `${daysLate}d late · ${dispDate(next.start)}`;
+    } else {
+      nextLabelEl.textContent = 'Next Period';
+      nextLabelEl.classList.remove('late-label');
+      nextPeriodEl.className = 'status-value period-col';
+      nextPeriodEl.textContent = `${dispDate(next.start)} · ${relDate(next.start)}`;
+    }
     const ov = addDays(next.start, -lut);
     document.getElementById('sOvulation').textContent =
       `${dispDate(ov)} · ${relDate(ov)}`;
