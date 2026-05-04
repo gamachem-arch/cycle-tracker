@@ -3,6 +3,8 @@
 ## What it is
 A period/menstrual cycle and ovulation tracker built as a **single-file HTML web app** (`index.html`). No framework, no build step, no backend. All logic is vanilla JS/CSS embedded in the file.
 
+**App name:** せいり (seiri) — shown on iOS home screen label and share sheet. In-app header and browser `<title>` remain "Cycle Tracker".
+
 **Live URL:** https://gamachem-arch.github.io/cycle-tracker/
 **Repo:** https://github.com/gamachem-arch/cycle-tracker
 **Local path:** `/Users/michel/Claude/Period Tracker/`
@@ -203,8 +205,9 @@ Each of the 8 phases has a rich info card with: icon, name, sub-title, header gr
 - [x] Legend FAB always visible + bottom sheet
 - [x] Phase info cards for all 8 phases
 - [x] iOS PWA meta tags (add to home screen)
-- [x] Open Graph tags (share sheet preview image)
+- [x] Open Graph tags (share sheet preview image) — custom 1200×630 card (`og-image.png`); generator at `make-og-image.html`
 - [x] App icon — `icon.png`
+- [x] App name せいり on iOS home screen (`apple-mobile-web-app-title`) and share sheet (`og:title`)
 - [x] Local timezone fix (`getFullYear/Month/Date` not `toISOString`)
 - [x] SSH push workflow configured
 - [x] Add Period uses inline range calendar picker (tap start → tap end, month nav, range highlight, day count)
