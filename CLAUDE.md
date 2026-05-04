@@ -19,6 +19,8 @@ A period/menstrual cycle and ovulation tracker built as a **single-file HTML web
 | Auth | SSH key (`~/.ssh/id_ed25519`) | Set up during this session for git push |
 | Dev server | `python3 -m http.server 3000` | Only runtime available; config in `.claude/launch.json` |
 
+**Dev access from iPhone:** run server then open `http://<mac-local-ip>:3000` on same Wi-Fi. Get IP with `ipconfig getifaddr en0`.
+
 ---
 
 ## Data model (`localStorage` key: `ct_v1`)
@@ -46,7 +48,7 @@ A period/menstrual cycle and ovulation tracker built as a **single-file HTML web
 - **Ovulation window** — ov day ±2 days
 - **High libido window** — ov day −3 to ov day +1
 - **PMS window** — last 5 days before next period start
-- **Predictions** — generates 18 future cycles forward from last logged period start; no date limit (bug was fixed where limit anchored to wrong year)
+- **Predictions** — generates 18 future cycles forward from last logged period start; no date limit
 
 ---
 
@@ -91,11 +93,41 @@ Each day cell shows: **number** → **emoji** → **abbreviation text** (stacked
 
 ```
 [Sticky Header]        — title, History + Settings buttons
-[Sticky Status Bar]    — Cycle Day, Phase, Next Period, Ovulation, Avg Cycle, Avg Period
-[Calendar]             — year nav, legend strip (tappable), 12-month grid
-[Legend FAB]           — appears when legend scrolls out of view, opens bottom sheet
-[Quick Log Bar]        — Period Start / Period End / Add Past Period (fixed bottom)
+[Sticky Status Bar]    — 3×2 grid: Cycle Day / Phase / Next Period / Ovulation / Avg Cycle / Avg Period
+[Calendar]             — optional year nav, collapsible past/future sections, current month always expanded
+[Legend FAB]           — always visible (fixed bottom-right), opens bottom sheet
+[Quick Log Bar]        — floating pill above bottom edge: Period Start / End Period Today / Add Past Period
 ```
+
+---
+
+## Status bar layout
+
+6 items in a **3-column × 2-row CSS grid** (no horizontal scroll):
+
+| Col 1 | Col 2 | Col 3 |
+|---|---|---|
+| Cycle Day | Phase (emoji + pill badge) | Next Period |
+| Ovulation | Avg Cycle | Avg Period |
+
+Phase cell renders with `innerHTML`: emoji from `EMOJI[todayInfo.cls]` + `<span class="phase-badge phase-{phase}">` pill.
+
+---
+
+## Calendar month sections (current year only)
+
+When viewing the current year, months are split into 3 groups:
+- **Past months** (`↑ Jan – Apr`) — collapsed by default, `id="section-past"`
+- **Current month** — always visible, rendered directly in the grid
+- **Future months** (`↓ Jun – Dec`) — collapsed by default, `id="section-future"`
+
+`makeSectionEl(label, count, type)` builds the collapsible wrapper. `toggleSection(id)` toggles `.collapsed` class. When not current year, all 12 months render flat with no sections.
+
+---
+
+## Year navigation
+
+Hidden by default (`id="yearRow"`, starts with `.hidden`). `syncYearNav()` — called from `render()` — shows the nav only if any `db.periods` entry has a start year ≠ current year. Snaps `currentYear` back to current year if nav becomes hidden.
 
 ---
 
@@ -107,10 +139,22 @@ Each day cell shows: **number** → **emoji** → **abbreviation text** (stacked
 | `mHistory` | List all logged periods with delete |
 | `mSettings` | Default cycle/period/luteal lengths + clear all data |
 | `mDay` | Day detail — phase info, timing, blurb, gear ⚙ for edits |
-| `mPhase` | Full phase info card (triggered from legend, day modal phase pill, or FAB sheet) |
-| `legendSheet` | Bottom sheet legend (triggered by FAB when legend out of view) |
+| `mPhase` | Full phase info card (triggered from FAB sheet or day modal phase pill) |
+| `legendSheet` | Bottom sheet legend (triggered by Legend FAB) |
 
 **z-index stack:** header/status (89–90) → legend FAB (88) → legend sheet (210) → overlays/modals (220)
+
+---
+
+## Quick log bar
+
+Floating pill, `bottom: 28px`, `left/right: 14px`, `border-radius: 18px`, `box-shadow`.
+
+| Button | Class | Behaviour |
+|---|---|---|
+| Period Start | `btn-rose` | Shown when no active period |
+| End Period Today | `btn-period-end` (solid rose, white text) | Shown when period active; asks confirmation before logging end |
+| + Add Past Period | `btn-ghost` | Always visible; opens `mAdd` modal |
 
 ---
 
@@ -131,28 +175,37 @@ Nudge controls shift `period.start` or `period.end` by ±1 or ±2 days with vali
 ## Phase info cards (`PHASE_INFO`)
 
 Each of the 8 phases has a rich info card with: icon, name, sub-title, header gradient, `about`, `duration`, `symptoms[]`, `tip`. Triggered by tapping:
-- Any legend item (inline strip or FAB sheet)
+- Any item in the Legend FAB bottom sheet
 - The phase badge pill inside a day modal
+
+---
+
+## Today indicator
+
+`.day.today` gets `box-shadow: 0 0 0 2px var(--purple-light), 0 0 10px rgba(167,139,250,.35)` — a glowing purple ring. Works on both filled (current month) and circle (past month) day styles. No dot pseudo-element.
 
 ---
 
 ## What's live and working
 - [x] Full yearly calendar with 12-month scrollable grid
-- [x] Year navigation (← →)
+- [x] Collapsible past/future month sections (current year only)
+- [x] Year navigation — hidden unless periods span multiple years
 - [x] All 8 cycle phases calculated and colour-coded
 - [x] 3 visual modes: past rings / current fills / future dots
 - [x] Emoji + abbreviation indicators on every day
-- [x] Sticky header + status bar
-- [x] Quick-log bar (Period Start / End / Add Past)
+- [x] Sticky header + status bar (3×2 grid, no scroll)
+- [x] Phase cell in status bar shows emoji + coloured pill badge
+- [x] Today indicator: glowing purple ring
+- [x] Quick-log floating bar (Period Start / End Period Today / Add Past)
+- [x] Period End requires confirmation dialog
 - [x] Day detail modal with phase info, timing, blurb, tappable phase pill
 - [x] ⚙ gear-gated nudge editing for period start/end dates
-- [x] Floating legend FAB + bottom sheet
+- [x] Legend FAB always visible + bottom sheet
 - [x] Phase info cards for all 8 phases
 - [x] iOS PWA meta tags (add to home screen)
 - [x] Open Graph tags (share sheet preview image)
-- [x] App icon (Kuromi) — `icon.png`
+- [x] App icon — `icon.png`
 - [x] Local timezone fix (`getFullYear/Month/Date` not `toISOString`)
-- [x] Predictions bug fix (no longer anchored to wrong year)
 - [x] SSH push workflow configured
 
 ---
