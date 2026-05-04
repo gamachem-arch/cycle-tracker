@@ -254,6 +254,62 @@
     .day.span-end   { border-radius: 2px 5px 5px 2px; }
     .day.span-mid   { border-radius: 2px; }
 
+    /* ── Legend FAB ───────────────────────── */
+    .legend-fab {
+      position: fixed; bottom: 72px; right: 16px; z-index: 88;
+      background: var(--surface2); border: 1px solid var(--border-light);
+      color: var(--purple-light); border-radius: 20px;
+      padding: 7px 13px 7px 10px;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 500; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+      transition: opacity .2s, transform .2s;
+      font-family: inherit;
+    }
+    .legend-fab.hidden { opacity: 0; pointer-events: none; transform: translateY(6px); }
+    .legend-fab svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── Legend sheet ─────────────────────── */
+    .legend-sheet {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: flex-end;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(5px);
+    }
+    .legend-sheet.hidden { display: none; }
+    .legend-sheet-inner {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px 32px; width: 100%;
+      animation: sheetUp .2s ease;
+    }
+    @keyframes sheetUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: none; opacity: 1; }
+    }
+    .legend-sheet-handle {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 0 auto 16px;
+    }
+    .legend-sheet-title {
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px;
+    }
+    .legend-sheet-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .legend-sheet-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 11px; border-radius: 10px;
+      background: var(--bg); border: 1px solid var(--border);
+      cursor: pointer; transition: border-color .15s;
+    }
+    .legend-sheet-item:hover { border-color: var(--purple-mid); }
+    .legend-sheet-pip {
+      width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    }
+    .legend-sheet-label { font-size: 11px; color: var(--text-muted); line-height: 1.3; }
+
     /* ── Quick Log Bar ────────────────────── */
     .quick-bar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
@@ -566,6 +622,57 @@
     </div>
     <div id="mPhaseBody"></div>
     <button class="btn btn-ghost btn-full" onclick="closeM('mPhase')" style="margin-top:16px">Got it</button>
+  </div>
+</div>
+
+<!-- Legend FAB -->
+<button class="legend-fab hidden" id="legendFab" onclick="openLegendSheet()">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/>
+    <rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/>
+  </svg>
+  Legend
+</button>
+
+<!-- Legend bottom sheet -->
+<div class="legend-sheet hidden" id="legendSheet" onclick="closeLegendSheet(event)">
+  <div class="legend-sheet-inner">
+    <div class="legend-sheet-handle"></div>
+    <div class="legend-sheet-title">Legend</div>
+    <div class="legend-sheet-grid">
+      <div class="legend-sheet-item" onclick="openPhaseInfo('period-actual')">
+        <div class="legend-sheet-pip" style="background:rgba(228,77,123,.85)"></div>
+        <span class="legend-sheet-label">Period</span>
+      </div>
+      <div class="legend-sheet-item" onclick="openPhaseInfo('period-predicted')">
+        <div class="legend-sheet-pip" style="background:rgba(228,77,123,.22);outline:1px dashed rgba(228,77,123,.5)"></div>
+        <span class="legend-sheet-label">Predicted period</span>
+      </div>
+      <div class="legend-sheet-item" onclick="openPhaseInfo('ovulation')">
+        <div class="legend-sheet-pip" style="background:rgba(244,114,182,.8)"></div>
+        <span class="legend-sheet-label">Ovulation day</span>
+      </div>
+      <div class="legend-sheet-item" onclick="openPhaseInfo('ovulation-window')">
+        <div class="legend-sheet-pip" style="background:rgba(244,114,182,.28)"></div>
+        <span class="legend-sheet-label">Ovulation window</span>
+      </div>
+      <div class="legend-sheet-item" onclick="openPhaseInfo('high-libido')">
+        <div class="legend-sheet-pip" style="background:rgba(251,146,60,.35)"></div>
+        <span class="legend-sheet-label">High libido</span>
+      </div>
+      <div class="legend-sheet-item" onclick="openPhaseInfo('pms')">
+        <div class="legend-sheet-pip" style="background:rgba(180,80,160,.55)"></div>
+        <span class="legend-sheet-label">PMS window</span>
+      </div>
+      <div class="legend-sheet-item" onclick="openPhaseInfo('follicular')">
+        <div class="legend-sheet-pip" style="background:rgba(52,211,153,.35)"></div>
+        <span class="legend-sheet-label">Follicular</span>
+      </div>
+      <div class="legend-sheet-item" onclick="openPhaseInfo('luteal')">
+        <div class="legend-sheet-pip" style="background:rgba(251,191,36,.3)"></div>
+        <span class="legend-sheet-label">Luteal</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1168,6 +1275,26 @@ function openPhaseInfo(key) {
   `;
   openM('mPhase');
 }
+
+// ─── Legend FAB ───────────────────────────────────────────────────────────────
+
+function openLegendSheet() {
+  document.getElementById('legendSheet').classList.remove('hidden');
+}
+function closeLegendSheet(e) {
+  // close on backdrop tap (not on inner content)
+  if (e.target === document.getElementById('legendSheet')) {
+    document.getElementById('legendSheet').classList.add('hidden');
+  }
+}
+
+// Show FAB only when the inline legend has scrolled out of view
+const legendFab = document.getElementById('legendFab');
+const legendEl  = document.querySelector('.legend');
+new IntersectionObserver(
+  ([entry]) => legendFab.classList.toggle('hidden', entry.isIntersecting),
+  { threshold: 0.1 }
+).observe(legendEl);
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
