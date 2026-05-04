@@ -249,6 +249,29 @@
     .day.pms             { background: var(--pms); color: #d8a0cc; }
     .day.luteal          { background: var(--luteal); color: var(--text-muted); }
 
+    /* predicted period — italic number */
+    .day.period-predicted { font-style: italic; }
+
+    /* phase abbreviation label */
+    .day-abbr {
+      position: absolute; bottom: 2px; left: 0; right: 0;
+      font-size: 6px; text-align: center; line-height: 1;
+      font-weight: 700; letter-spacing: .4px; opacity: .9;
+      font-style: normal; pointer-events: none;
+    }
+
+    /* ── Past months — rings instead of filled boxes ── */
+    .past-month .month-name { opacity: .55; }
+    .past-month .day { border-radius: 50% !important; background: transparent !important; }
+    .past-month .day.period-actual   { box-shadow: 0 0 0 2px rgba(228,77,123,.9);  color: #f472b6; }
+    .past-month .day.period-predicted{ box-shadow: 0 0 0 1.5px rgba(228,77,123,.4); color: #f472b6; }
+    .past-month .day.ovulation       { box-shadow: 0 0 0 2px rgba(244,114,182,.85); color: #f9a8d4; }
+    .past-month .day.ovulation-window{ box-shadow: 0 0 0 1.5px rgba(244,114,182,.45); color: #f9a8d4; }
+    .past-month .day.high-libido     { box-shadow: 0 0 0 1.5px rgba(251,146,60,.55);  color: #fdba74; }
+    .past-month .day.pms             { box-shadow: 0 0 0 1.5px rgba(180,80,160,.6);   color: #d8a0cc; }
+    .past-month .day.follicular      { box-shadow: 0 0 0 1.5px rgba(52,211,153,.4);   color: var(--text-dim); }
+    .past-month .day.luteal          { box-shadow: 0 0 0 1.5px rgba(251,191,36,.35);  color: var(--text-dim); }
+
     /* phase-span connectors (start/end rounded corners) */
     .day.span-start { border-radius: 5px 2px 2px 5px; }
     .day.span-end   { border-radius: 2px 5px 5px 2px; }
@@ -876,10 +899,25 @@ function render() {
   syncQuickBtns();
 }
 
+const ABBR = {
+  'period-actual':    'P',
+  'period-predicted': '~P',
+  'ovulation':        'OV',
+  'ovulation-window': 'OW',
+  'high-libido':      'HL',
+  'pms':              'PMS',
+  'follicular':       'FO',
+  'luteal':           'LU',
+};
+
 function renderMonth(month, map, now) {
   const card = document.createElement('div');
-  const isCur = now.getFullYear()===currentYear && now.getMonth()===month;
-  card.className = 'month-card' + (isCur ? ' current-month' : '');
+  const isCur  = now.getFullYear()===currentYear && now.getMonth()===month;
+  const isPast = currentYear < now.getFullYear() ||
+                 (currentYear === now.getFullYear() && month < now.getMonth());
+  card.className = 'month-card'
+    + (isCur  ? ' current-month' : '')
+    + (isPast ? ' past-month' : '');
 
   const first = new Date(currentYear, month, 1).getDay();
   const days  = new Date(currentYear, month+1, 0).getDate();
@@ -896,7 +934,10 @@ function renderMonth(month, map, now) {
     const info = map[ds];
     const cls  = info ? info.cls : '';
     const isToday = ds === TODAY;
-    h += `<div class="day ${cls}${isToday?' today':''}" onclick="openDay('${ds}')">${day}</div>`;
+    const abbr = cls ? (ABBR[cls] || '') : '';
+    h += `<div class="day ${cls}${isToday?' today':''}" onclick="openDay('${ds}')">
+      ${day}${abbr ? `<span class="day-abbr">${abbr}</span>` : ''}
+    </div>`;
   }
 
   h += '</div>';
@@ -1091,6 +1132,13 @@ function openDay(ds) {
     'pms':              'PMS window'
   };
 
+  // Compute cycle context
+  const preds    = predictions(4);
+  const nextPred = preds[0];
+  const lut      = db.settings.lutealLength;
+  const nextPeriodStart = nextPred?.start;
+  const nextOvDay       = nextPeriodStart ? addDays(nextPeriodStart, -lut) : null;
+
   let rows = '';
   if (info) {
     if (info.cycleDay) rows += row('Cycle day', `Day ${info.cycleDay}`);
@@ -1098,6 +1146,28 @@ function openDay(ds) {
       const badge = `<span class="phase-badge phase-${info.phase}">${phaseLabel[info.phase]||info.phase}</span>`;
       rows += row('Phase', badge);
     }
+
+    // Relative timing context
+    if (nextPeriodStart) {
+      const dToPeriod = diffDays(ds, nextPeriodStart);
+      if (dToPeriod > 0)       rows += row('Next period', `in ${dToPeriod} day${dToPeriod===1?'':'s'}`);
+      else if (dToPeriod === 0) rows += row('Next period', 'today (predicted)');
+      else                      rows += row('Since period start', `${-dToPeriod} day${dToPeriod===-1?'':'s'} ago`);
+    }
+    if (nextOvDay) {
+      const dToOv = diffDays(ds, nextOvDay);
+      if (dToOv > 0)        rows += row('Next ovulation', `in ${dToOv} day${dToOv===1?'':'s'}`);
+      else if (dToOv === 0) rows += row('Ovulation', 'today');
+      else                   rows += row('Since ovulation', `${-dToOv} day${dToOv===-1?'':'s'} ago`);
+    }
+
+    // Phase blurb from PHASE_INFO
+    const phaseKey = info.cls;
+    if (PHASE_INFO[phaseKey]) {
+      const blurb = PHASE_INFO[phaseKey].about.split('.')[0] + '.'; // first sentence
+      rows += `<div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--text-muted);line-height:1.55">${blurb}</div>`;
+    }
+
     const extras = [...info.flags]
       .filter(f => f !== info.cls && f !== 'follicular' && f !== 'luteal' && f !== 'pms')
       .map(f => typeLabel[f]).filter(Boolean);
