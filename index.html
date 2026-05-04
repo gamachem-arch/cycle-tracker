@@ -1191,8 +1191,13 @@ function updateStatus(map) {
   }
 
   const todayInfo = map[TODAY];
+  const preds0 = predictions(1);
+  const daysLate0 = preds0.length ? diffDays(preds0[0].start, TODAY) : 0;
+  const cycleDay = daysLate0 > 0
+    ? diffDays(last.start, TODAY) + 1
+    : todayInfo?.cycleDay;
   document.getElementById('sCycleDay').textContent =
-    todayInfo?.cycleDay ? `Day ${todayInfo.cycleDay}` : '—';
+    cycleDay ? `Day ${cycleDay}` : '—';
 
   const phaseNames = {
     menstrual:'Menstrual', follicular:'Follicular',
