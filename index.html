@@ -485,6 +485,49 @@
     .modal-footer .btn { flex: 1; justify-content: center; }
     .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
+    /* ── Range picker ─────────────────────── */
+    .rp-wrap { user-select: none; }
+    .rp-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .rp-nav-btn {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+      width: 32px; height: 32px; border-radius: 8px; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rp-nav-btn:hover { border-color: var(--border-light); color: var(--text); }
+    .rp-month-label { font-size: 15px; font-weight: 600; color: var(--text); }
+    .rp-weekdays { display: grid; grid-template-columns: repeat(7,1fr); margin-bottom: 4px; }
+    .rp-wd { text-align: center; font-size: 10px; font-weight: 600; color: var(--text-dim); padding: 2px 0 6px; }
+    .rp-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+    .rp-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 500; color: var(--text-muted);
+      border-radius: 6px; cursor: pointer; position: relative;
+    }
+    .rp-day:not(.rp-empty):not(.rp-disabled):hover { background: var(--surface2); color: var(--text); }
+    .rp-day.rp-empty, .rp-day.rp-disabled { cursor: default; }
+    .rp-day.rp-disabled { color: var(--text-dim); opacity: .4; }
+    .rp-day.rp-today { color: var(--purple-light); font-weight: 700; }
+    .rp-day.rp-today::after {
+      content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: var(--purple-light);
+    }
+    .rp-day.rp-range { background: rgba(228,77,123,.12); color: var(--text); border-radius: 0; }
+    .rp-day.rp-start, .rp-day.rp-end {
+      background: var(--period); color: #fff; font-weight: 700; border-radius: 6px;
+    }
+    .rp-day.rp-start.rp-range-l { border-radius: 6px 0 0 6px; }
+    .rp-day.rp-end.rp-range-r   { border-radius: 0 6px 6px 0; }
+    .rp-selection {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 12px; padding: 10px 12px;
+      background: var(--surface2); border-radius: 10px; border: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .rp-sel-date { font-weight: 600; color: var(--text); }
+    .rp-sel-placeholder { color: var(--text-dim); font-style: italic; }
+    .rp-sel-arrow { color: var(--text-dim); font-size: 11px; }
+    .rp-hint { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
     /* ── History list ─────────────────────── */
     .history-list { max-height: 220px; overflow-y: auto; margin-bottom: 4px; }
     .history-item {
@@ -647,15 +690,24 @@
       <span class="modal-title" id="mAddTitle">Add Period</span>
       <button class="modal-close" onclick="closeM('mAdd')">×</button>
     </div>
-    <div class="form-row">
-      <div class="form-field">
-        <label class="form-label">Start Date</label>
-        <input type="date" class="form-input" id="fStart">
+    <div class="rp-wrap" id="rangePicker">
+      <div class="rp-nav">
+        <button class="rp-nav-btn" onclick="rpShift(-1)">‹</button>
+        <span class="rp-month-label" id="rpLabel"></span>
+        <button class="rp-nav-btn" onclick="rpShift(1)">›</button>
       </div>
-      <div class="form-field">
-        <label class="form-label">End Date (opt)</label>
-        <input type="date" class="form-input" id="fEnd">
+      <div class="rp-weekdays">
+        <div class="rp-wd">Su</div><div class="rp-wd">Mo</div><div class="rp-wd">Tu</div>
+        <div class="rp-wd">We</div><div class="rp-wd">Th</div><div class="rp-wd">Fr</div>
+        <div class="rp-wd">Sa</div>
       </div>
+      <div class="rp-days" id="rpDays"></div>
+      <div class="rp-selection">
+        <span id="rpStartLabel" class="rp-sel-placeholder">Start</span>
+        <span class="rp-sel-arrow">→</span>
+        <span id="rpEndLabel" class="rp-sel-placeholder">End (optional)</span>
+      </div>
+      <div class="rp-hint" id="rpHint">Tap a date to set start</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeM('mAdd')">Cancel</button>
@@ -1225,22 +1277,117 @@ document.querySelectorAll('.overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
 });
 
+// ─── Range picker ─────────────────────────────────────────────────────────────
+
+const rp = { start: null, end: null, year: 0, month: 0 };
+
+function rpOpen(start='', end='') {
+  const base = start ? new Date(start + 'T00:00:00') : new Date();
+  rp.year  = base.getFullYear();
+  rp.month = base.getMonth();
+  rp.start = start || null;
+  rp.end   = end   || null;
+  rpRender();
+}
+
+function rpShift(d) {
+  rp.month += d;
+  if (rp.month > 11) { rp.month = 0;  rp.year++; }
+  if (rp.month < 0)  { rp.month = 11; rp.year--; }
+  rpRender();
+}
+
+function rpRender() {
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  document.getElementById('rpLabel').textContent = `${MONTHS[rp.month]} ${rp.year}`;
+
+  const firstDay = new Date(rp.year, rp.month, 1).getDay();
+  const daysInMonth = new Date(rp.year, rp.month + 1, 0).getDate();
+  const todayStr = TODAY;
+
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="rp-day rp-empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${rp.year}-${String(rp.month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isFuture  = ds > todayStr;
+    const isToday   = ds === todayStr;
+    const isStart   = ds === rp.start;
+    const isEnd     = ds === rp.end;
+    const inRange   = rp.start && rp.end && ds > rp.start && ds < rp.end;
+
+    let cls = 'rp-day';
+    if (isFuture)  cls += ' rp-disabled';
+    if (isToday)   cls += ' rp-today';
+    if (inRange)   cls += ' rp-range';
+    if (isStart)   cls += ' rp-start' + (rp.end ? ' rp-range-l' : '');
+    if (isEnd)     cls += ' rp-end rp-range-r';
+
+    const onclick = isFuture ? '' : `onclick="rpTap('${ds}')"`;
+    html += `<div class="${cls}" ${onclick}>${d}</div>`;
+  }
+
+  document.getElementById('rpDays').innerHTML = html;
+
+  const fmt = ds => {
+    if (!ds) return null;
+    const [y,m,d] = ds.split('-');
+    return `${MONTHS[+m-1].slice(0,3)} ${+d}`;
+  };
+
+  const startEl = document.getElementById('rpStartLabel');
+  const endEl   = document.getElementById('rpEndLabel');
+  const hint    = document.getElementById('rpHint');
+
+  if (rp.start) {
+    startEl.textContent = fmt(rp.start);
+    startEl.className = 'rp-sel-date';
+  } else {
+    startEl.textContent = 'Start';
+    startEl.className = 'rp-sel-placeholder';
+  }
+  if (rp.end) {
+    endEl.textContent = fmt(rp.end);
+    endEl.className = 'rp-sel-date';
+    const days = diffDays(rp.start, rp.end) + 1;
+    hint.textContent = `${days} day${days>1?'s':''} — tap any date to restart`;
+  } else if (rp.start) {
+    endEl.textContent = 'End (optional)';
+    endEl.className = 'rp-sel-placeholder';
+    hint.textContent = 'Tap end date, or save as single-day start';
+  } else {
+    endEl.textContent = 'End (optional)';
+    endEl.className = 'rp-sel-placeholder';
+    hint.textContent = 'Tap a date to set start';
+  }
+}
+
+function rpTap(ds) {
+  if (!rp.start || (rp.start && rp.end)) {
+    rp.start = ds; rp.end = null;
+  } else if (ds >= rp.start) {
+    rp.end = ds;
+  } else {
+    rp.start = ds; rp.end = null;
+  }
+  rpRender();
+}
+
 // ─── Add period modal ─────────────────────────────────────────────────────────
 
 function openAddPeriod(start='', end='') {
   document.getElementById('mAddTitle').textContent = 'Add Period';
-  document.getElementById('fStart').value = start || TODAY;
-  document.getElementById('fEnd').value   = end || '';
+  rpOpen(start, end);
   openM('mAdd');
 }
 
 function savePeriod() {
-  const start = document.getElementById('fStart').value;
-  const end   = document.getElementById('fEnd').value;
-  if (!start) return alert('Start date required.');
+  const start = rp.start;
+  const end   = rp.end;
+  if (!start) return alert('Tap a start date first.');
   if (end && end < start) return alert('End must be on or after start.');
 
-  // Check overlap
   const overlap = db.periods.find(p => {
     const pE = p.end || addDays(p.start, db.settings.periodLength - 1);
     const e2 = end   || addDays(start,   db.settings.periodLength - 1);
