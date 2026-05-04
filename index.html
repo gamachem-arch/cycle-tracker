@@ -598,7 +598,7 @@ function persist() { localStorage.setItem('ct_v1', JSON.stringify(db)); }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-function fmt(d) { return d.toISOString().split('T')[0]; }
+function fmt(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
 function parse(s) {
   const [y,m,d] = s.split('-').map(Number);
