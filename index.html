@@ -478,6 +478,7 @@
     .phase-ovulation  { background: rgba(244,114,182,.2); color: #f9a8d4; }
     .phase-fertile    { background: rgba(251,146,60,.2); color: #fdba74; }
     .phase-pms        { background: rgba(180,80,160,.2); color: #d8a0cc; }
+    .phase-predicted  { background: rgba(255,255,255,.07); color: var(--text-dim); border: 1px solid var(--border); }
     .phase-luteal     { background: rgba(251,191,36,.2); color: #fde68a; }
 
     .hidden { display: none !important; }
@@ -1165,7 +1166,9 @@ function openDay(ds) {
   if (info) {
     if (info.cycleDay) rows += row('Cycle day', `Day ${info.cycleDay}`);
     if (info.phase) {
-      const badge = `<span class="phase-badge phase-${info.phase}">${phaseLabel[info.phase]||info.phase}</span>`;
+      const isPredicted = ds > TODAY && !period;
+      const badge = `<span class="phase-badge phase-${info.phase}">${phaseLabel[info.phase]||info.phase}</span>`
+                  + (isPredicted ? ` <span class="phase-badge phase-predicted">Predicted</span>` : '');
       rows += row('Phase', badge);
     }
 
