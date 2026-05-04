@@ -999,7 +999,7 @@ function renderMonth(month, map, now) {
     const info    = map[ds];
     const cls     = info ? info.cls : '';
     const isToday = ds === TODAY;
-    const isFuturePred = ds > TODAY && cls && cls !== 'period-actual' && !isPast;
+    const isFuturePred = ds > TODAY && cls && cls !== 'period-actual' && !isPast && !isCur;
 
     if (isFuturePred) {
       const dotColor = DOT_COLOR[cls] || 'rgba(255,255,255,.2)';
