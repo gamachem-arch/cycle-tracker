@@ -135,7 +135,7 @@ Hidden by default (`id="yearRow"`, starts with `.hidden`). `syncYearNav()` — c
 
 | ID | Purpose |
 |---|---|
-| `mAdd` | Add / edit a period entry (start + end date pickers) |
+| `mAdd` | Add a period entry — inline range calendar picker (tap start → tap end) |
 | `mHistory` | List all logged periods with delete |
 | `mSettings` | Default cycle/period/luteal lengths + clear all data |
 | `mDay` | Day detail — phase info, timing, blurb, gear ⚙ for edits |
@@ -207,6 +207,7 @@ Each of the 8 phases has a rich info card with: icon, name, sub-title, header gr
 - [x] App icon — `icon.png`
 - [x] Local timezone fix (`getFullYear/Month/Date` not `toISOString`)
 - [x] SSH push workflow configured
+- [x] Add Period uses inline range calendar picker (tap start → tap end, month nav, range highlight, day count)
 
 ---
 
