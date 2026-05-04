@@ -1132,12 +1132,18 @@ function clearAll() {
 // ─── Day detail modal ─────────────────────────────────────────────────────────
 
 function openDay(ds) {
-  const map   = buildMap(parse(ds).getFullYear());
-  const info  = map[ds];
-  const dObj  = parse(ds);
-  const title = dObj.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric'})
-              + (ds===TODAY ? ' · Today' : '');
+  const map    = buildMap(parse(ds).getFullYear());
+  const info   = map[ds];
+  const dObj   = parse(ds);
+  const title  = dObj.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric'})
+               + (ds===TODAY ? ' · Today' : '');
   document.getElementById('mDayTitle').textContent = title;
+
+  // Resolve logged period early so it's available throughout
+  const period = db.periods.find(p => {
+    const pE = p.end || addDays(p.start, db.settings.periodLength - 1);
+    return ds >= p.start && ds <= pE;
+  });
 
   // Info rows
   const phaseLabel = {
@@ -1201,12 +1207,6 @@ function openDay(ds) {
     rows = '<div class="info-row"><span class="info-key" style="color:var(--text-dim)">No cycle data for this day</span></div>';
   }
   document.getElementById('mDayBody').innerHTML = rows;
-
-  // Find if this day belongs to a *logged* (not predicted) period
-  const period = db.periods.find(p => {
-    const pE = p.end || addDays(p.start, db.settings.periodLength - 1);
-    return ds >= p.start && ds <= pE;
-  });
 
   const isPast   = ds < TODAY;
   const hasPhase = !!info;
