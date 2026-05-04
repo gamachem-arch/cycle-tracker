@@ -262,15 +262,20 @@
 
     /* ── Past months — rings instead of filled boxes ── */
     .past-month .month-name { opacity: .55; }
-    .past-month .day { border-radius: 50% !important; background: transparent !important; }
-    .past-month .day.period-actual   { box-shadow: 0 0 0 2px rgba(228,77,123,.9);  color: #f472b6; }
-    .past-month .day.period-predicted{ box-shadow: 0 0 0 1.5px rgba(228,77,123,.4); color: #f472b6; }
-    .past-month .day.ovulation       { box-shadow: 0 0 0 2px rgba(244,114,182,.85); color: #f9a8d4; }
-    .past-month .day.ovulation-window{ box-shadow: 0 0 0 1.5px rgba(244,114,182,.45); color: #f9a8d4; }
-    .past-month .day.high-libido     { box-shadow: 0 0 0 1.5px rgba(251,146,60,.55);  color: #fdba74; }
-    .past-month .day.pms             { box-shadow: 0 0 0 1.5px rgba(180,80,160,.6);   color: #d8a0cc; }
-    .past-month .day.follicular      { box-shadow: 0 0 0 1.5px rgba(52,211,153,.4);   color: var(--text-dim); }
-    .past-month .day.luteal          { box-shadow: 0 0 0 1.5px rgba(251,191,36,.35);  color: var(--text-dim); }
+    .past-month .day {
+      border-radius: 50% !important;
+      background: transparent !important;
+      transform: scale(0.8);
+      border: 1.5px solid transparent;
+    }
+    .past-month .day.period-actual    { border-color: rgba(228,77,123,.9);   color: #f472b6; }
+    .past-month .day.period-predicted { border-color: rgba(228,77,123,.4);   color: #f472b6; }
+    .past-month .day.ovulation        { border-color: rgba(244,114,182,.9);  color: #f9a8d4; border-width: 2px; }
+    .past-month .day.ovulation-window { border-color: rgba(244,114,182,.5);  color: #f9a8d4; }
+    .past-month .day.high-libido      { border-color: rgba(251,146,60,.6);   color: #fdba74; }
+    .past-month .day.pms              { border-color: rgba(180,80,160,.65);  color: #d8a0cc; }
+    .past-month .day.follicular       { border-color: rgba(52,211,153,.45);  color: var(--text-dim); }
+    .past-month .day.luteal           { border-color: rgba(251,191,36,.4);   color: var(--text-dim); }
 
     /* phase-span connectors (start/end rounded corners) */
     .day.span-start { border-radius: 5px 2px 2px 5px; }
