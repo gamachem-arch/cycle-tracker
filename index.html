@@ -1225,8 +1225,8 @@ function openDay(ds) {
       acts += `<button class="btn btn-ghost" onclick="openAddPeriod('${ds}')">Add period starting here…</button>`;
     }
     // Calculated-phase past days (follicular, luteal, etc.) → no actions
-  } else {
-    // Today or future — full quick-log behaviour
+  } else if (ds === TODAY) {
+    // Today only — quick-log behaviour
     if (period) {
       if (period.start === ds)
         editActs += `<button class="btn btn-ghost" onclick="removePeriodByStart('${ds}')">Remove period entry</button>`;
@@ -1238,6 +1238,7 @@ function openDay(ds) {
       acts += `<button class="btn btn-rose" onclick="setStart('${ds}')">Log as period start</button>`;
     }
   }
+  // Future days → no actions
 
   const gear = document.getElementById('mDayGear');
   const editEl = document.getElementById('mDayEdit');
