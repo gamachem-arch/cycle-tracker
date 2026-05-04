@@ -233,12 +233,13 @@
     .day.empty:hover { filter: none; transform: none; }
 
     .day-num  { font-size: 13px; line-height: 1; font-weight: inherit; }
-    .day-abbr {
-      font-size: 9px; line-height: 1; pointer-events: none;
+    .day-abbr, .day-emoji {
+      font-size: 8px; line-height: 1; pointer-events: none;
+      display: flex; align-items: center; justify-content: center; gap: 1px;
     }
-    .day-emoji {
-      font-size: 9px; line-height: 1; pointer-events: none;
-      filter: saturate(.8);
+    .day-abbr-txt {
+      font-size: 6px; font-weight: 700; letter-spacing: .4px;
+      text-transform: uppercase; opacity: .85;
     }
 
     /* today indicator */
@@ -586,14 +587,14 @@
   </div>
 
   <div class="legend">
-    <div class="legend-item" onclick="openPhaseInfo('period-actual')"><div class="legend-pip period-actual"></div><span class="legend-text">Period</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('period-predicted')"><div class="legend-pip period-predicted"></div><span class="legend-text">Predicted period</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('ovulation')"><div class="legend-pip ovulation"></div><span class="legend-text">Ovulation day</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('ovulation-window')"><div class="legend-pip ovulation-window"></div><span class="legend-text">Ovulation window</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('high-libido')"><div class="legend-pip high-libido"></div><span class="legend-text">High libido</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('follicular')"><div class="legend-pip follicular"></div><span class="legend-text">Follicular</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('luteal')"><div class="legend-pip luteal"></div><span class="legend-text">Luteal</span></div>
-    <div class="legend-item" onclick="openPhaseInfo('pms')"><div class="legend-pip pms"></div><span class="legend-text">PMS window</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('period-actual')"><div class="legend-pip period-actual"></div><span class="legend-text">🩸 Period</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('period-predicted')"><div class="legend-pip period-predicted"></div><span class="legend-text">🩸 Predicted period</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('ovulation')"><div class="legend-pip ovulation"></div><span class="legend-text">✨ Ovulation day</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('ovulation-window')"><div class="legend-pip ovulation-window"></div><span class="legend-text">🌸 Ovulation window</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('high-libido')"><div class="legend-pip high-libido"></div><span class="legend-text">🔥 High libido</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('follicular')"><div class="legend-pip follicular"></div><span class="legend-text">🌱 Follicular</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('luteal')"><div class="legend-pip luteal"></div><span class="legend-text">🍂 Luteal</span></div>
+    <div class="legend-item" onclick="openPhaseInfo('pms')"><div class="legend-pip pms"></div><span class="legend-text">🌩️ PMS window</span></div>
   </div>
 
   <div class="months-grid" id="monthsGrid"></div>
@@ -722,35 +723,35 @@
     <div class="legend-sheet-grid">
       <div class="legend-sheet-item" onclick="openPhaseInfo('period-actual')">
         <div class="legend-sheet-pip" style="background:rgba(228,77,123,.85)"></div>
-        <span class="legend-sheet-label">Period</span>
+        <span class="legend-sheet-label">🩸 Period</span>
       </div>
       <div class="legend-sheet-item" onclick="openPhaseInfo('period-predicted')">
         <div class="legend-sheet-pip" style="background:rgba(228,77,123,.22);outline:1px dashed rgba(228,77,123,.5)"></div>
-        <span class="legend-sheet-label">Predicted period</span>
+        <span class="legend-sheet-label">🩸 Predicted period</span>
       </div>
       <div class="legend-sheet-item" onclick="openPhaseInfo('ovulation')">
         <div class="legend-sheet-pip" style="background:rgba(244,114,182,.8)"></div>
-        <span class="legend-sheet-label">Ovulation day</span>
+        <span class="legend-sheet-label">✨ Ovulation day</span>
       </div>
       <div class="legend-sheet-item" onclick="openPhaseInfo('ovulation-window')">
         <div class="legend-sheet-pip" style="background:rgba(244,114,182,.28)"></div>
-        <span class="legend-sheet-label">Ovulation window</span>
+        <span class="legend-sheet-label">🌸 Ovulation window</span>
       </div>
       <div class="legend-sheet-item" onclick="openPhaseInfo('high-libido')">
         <div class="legend-sheet-pip" style="background:rgba(251,146,60,.35)"></div>
-        <span class="legend-sheet-label">High libido</span>
+        <span class="legend-sheet-label">🔥 High libido</span>
       </div>
       <div class="legend-sheet-item" onclick="openPhaseInfo('pms')">
         <div class="legend-sheet-pip" style="background:rgba(180,80,160,.55)"></div>
-        <span class="legend-sheet-label">PMS window</span>
+        <span class="legend-sheet-label">🌩️ PMS window</span>
       </div>
       <div class="legend-sheet-item" onclick="openPhaseInfo('follicular')">
         <div class="legend-sheet-pip" style="background:rgba(52,211,153,.35)"></div>
-        <span class="legend-sheet-label">Follicular</span>
+        <span class="legend-sheet-label">🌱 Follicular</span>
       </div>
       <div class="legend-sheet-item" onclick="openPhaseInfo('luteal')">
         <div class="legend-sheet-pip" style="background:rgba(251,191,36,.3)"></div>
-        <span class="legend-sheet-label">Luteal</span>
+        <span class="legend-sheet-label">🍂 Luteal</span>
       </div>
     </div>
   </div>
@@ -1016,15 +1017,17 @@ function renderMonth(month, map, now) {
 
     if (isFuturePred) {
       const emoji = EMOJI[cls] || '';
+      const abbr  = ABBR[cls]  || '';
       h += `<div class="day future-pred ${cls}${isToday?' today':''}" onclick="openDay('${ds}')">
         <span class="day-num">${day}</span>
-        ${emoji ? `<span class="day-emoji">${emoji}</span>` : ''}
+        ${emoji||abbr ? `<span class="day-emoji">${emoji}${abbr ? ` <span class="day-abbr-txt">${abbr}</span>` : ''}</span>` : ''}
       </div>`;
     } else {
       const emoji = cls ? (EMOJI[cls] || '') : '';
+      const abbr  = cls ? (ABBR[cls]  || '') : '';
       h += `<div class="day ${cls}${isToday?' today':''}" onclick="openDay('${ds}')">
         <span class="day-num">${day}</span>
-        ${emoji ? `<span class="day-abbr">${emoji}</span>` : ''}
+        ${emoji||abbr ? `<span class="day-abbr">${emoji}${abbr ? ` <span class="day-abbr-txt">${abbr}</span>` : ''}</span>` : ''}
       </div>`;
     }
   }
