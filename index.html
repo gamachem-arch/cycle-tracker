@@ -1152,18 +1152,18 @@ function openDay(ds) {
       rows += row('Phase', badge);
     }
 
-    // Relative timing context
-    if (nextPeriodStart) {
-      const dToPeriod = diffDays(ds, nextPeriodStart);
-      if (dToPeriod > 0)       rows += row('Next period', `in ${dToPeriod} day${dToPeriod===1?'':'s'}`);
-      else if (dToPeriod === 0) rows += row('Next period', 'today (predicted)');
-      else                      rows += row('Since period start', `${-dToPeriod} day${dToPeriod===-1?'':'s'} ago`);
-    }
-    if (nextOvDay) {
-      const dToOv = diffDays(ds, nextOvDay);
-      if (dToOv > 0)        rows += row('Next ovulation', `in ${dToOv} day${dToOv===1?'':'s'}`);
-      else if (dToOv === 0) rows += row('Ovulation', 'today');
-      else                   rows += row('Since ovulation', `${-dToOv} day${dToOv===-1?'':'s'} ago`);
+    // Relative timing context — only show for today and future days
+    if (ds >= TODAY) {
+      if (nextPeriodStart) {
+        const dToPeriod = diffDays(ds, nextPeriodStart);
+        if (dToPeriod > 0)        rows += row('Next period', `in ${dToPeriod} day${dToPeriod===1?'':'s'}`);
+        else if (dToPeriod === 0) rows += row('Next period', 'today (predicted)');
+      }
+      if (nextOvDay) {
+        const dToOv = diffDays(ds, nextOvDay);
+        if (dToOv > 0)        rows += row('Next ovulation', `in ${dToOv} day${dToOv===1?'':'s'}`);
+        else if (dToOv === 0) rows += row('Ovulation', 'today');
+      }
     }
 
     // Phase blurb from PHASE_INFO
