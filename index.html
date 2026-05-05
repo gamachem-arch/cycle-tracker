@@ -605,9 +605,34 @@
       .months-section-body { grid-template-columns: 1fr; }
       .legend { gap: 6px 12px; }
     }
+  @media (orientation: landscape) and (max-width: 1024px) {
+    #landscape-block {
+      display: flex !important;
+    }
+  }
+  #landscape-block {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--bg);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text);
+    font-family: inherit;
+  }
+  #landscape-block .lb-icon { font-size: 48px; }
+  #landscape-block .lb-msg  { font-size: 16px; color: var(--text-dim); }
   </style>
 </head>
 <body>
+
+<div id="landscape-block">
+  <div class="lb-icon">📱</div>
+  <div class="lb-msg">Please rotate your device to portrait mode</div>
+</div>
 
 <!-- ═══════════════════════════════════════════════
      HEADER
@@ -841,6 +866,11 @@
      JAVASCRIPT
 ═══════════════════════════════════════════════ -->
 <script>
+// ─── Orientation lock (PWA / supported browsers) ─────────────────────────────
+if (screen.orientation && screen.orientation.lock) {
+  screen.orientation.lock('portrait').catch(() => {});
+}
+
 // ─── State ───────────────────────────────────────────────────────────────────
 
 let db = {
