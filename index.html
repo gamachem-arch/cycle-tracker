@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cycle Tracker</title>
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
@@ -48,16 +48,12 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { overflow-x: hidden; }
-
     body {
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       min-height: 100vh;
       line-height: 1.4;
-      overflow-x: hidden;
-      max-width: 100vw;
     }
 
     /* ── Scrollbar ────────────────────────── */
@@ -608,28 +604,6 @@
     @media (max-width: 520px) {
       .months-section-body { grid-template-columns: 1fr; }
       .legend { gap: 6px 12px; }
-    }
-
-    /* ── Safe area (notch / home bar) ────────── */
-    .quick-bar {
-      left:   max(14px, calc(env(safe-area-inset-left)  + 14px));
-      right:  max(14px, calc(env(safe-area-inset-right) + 14px));
-      bottom: max(28px, calc(env(safe-area-inset-bottom) + 14px));
-    }
-    .calendar-wrap {
-      padding-left:  max(20px, calc(env(safe-area-inset-left)  + 12px));
-      padding-right: max(20px, calc(env(safe-area-inset-right) + 12px));
-    }
-
-    /* ── Landscape compact layout ─────────────── */
-    @media (orientation: landscape) and (max-height: 500px) {
-      .header       { padding: 7px 20px; }
-      .status-bar   { position: static; }
-      .status-item  { padding: 5px 10px; }
-      .status-label { font-size: 7px; }
-      .status-value { font-size: 10px; }
-      .calendar-wrap { padding-top: 14px; padding-bottom: 120px; }
-      .legend-fab   { bottom: 76px; }
     }
   </style>
 </head>
@@ -2014,9 +1988,6 @@ document.getElementById('legendFab').classList.remove('hidden');
 
 load();
 render();
-
-// Re-render on orientation change — fixes iOS Safari stuck-width after rotation
-window.addEventListener('orientationchange', () => setTimeout(render, 150));
 
 // Scroll to current month on load
 requestAnimationFrame(() => {
