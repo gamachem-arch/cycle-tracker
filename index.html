@@ -1243,7 +1243,7 @@ function updateStatus(map) {
     const emoji = todayInfo.cls ? (EMOJI[todayInfo.cls] || '') : '';
     const name  = phaseNames[todayInfo.phase] || todayInfo.phase;
     document.getElementById('sPhase').innerHTML =
-      `${emoji} <span class="phase-badge phase-${todayInfo.phase}" style="font-size:9px;padding:1px 6px;vertical-align:middle">${name}</span>`;
+      `${emoji} <span class="phase-badge phase-${todayInfo.phase}" style="font-size:9px;padding:1px 6px;vertical-align:middle;cursor:pointer" onclick="openPhaseInfo('${todayInfo.cls}')">${name}</span>`;
   } else {
     document.getElementById('sPhase').textContent = '—';
   }
@@ -1653,6 +1653,23 @@ function openDay(ds) {
         ? PHASE_INFO[phaseKey].partnerAbout
         : PHASE_INFO[phaseKey].about.split('.')[0] + '.';
       rows += `<div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--text-muted);line-height:1.55">${blurb}</div>`;
+
+      if (pm && PHASE_INFO[phaseKey].partnerDos) {
+        const pill = (txt, color) =>
+          `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${color};white-space:nowrap">${txt}</span>`;
+        const dos    = PHASE_INFO[phaseKey].partnerDos.map(t => pill(t,'rgba(52,211,153,.15)')).join('');
+        const avoids = PHASE_INFO[phaseKey].partnerAvoids.map(t => pill(t,'rgba(228,77,123,.12)')).join('');
+        rows += `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(52,211,153,.8);margin-bottom:5px">✓ Do</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">${dos}</div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(228,77,123,.8);margin-bottom:5px">✕ Avoid</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">${avoids}</div>
+          </div>
+        </div>`;
+      }
     }
 
     const extras = [...info.flags]
@@ -1791,6 +1808,8 @@ const PHASE_INFO = {
     symptoms: ['Cramping','Bloating','Lower back pain','Fatigue','Headaches','Breast tenderness','Mood dips','Nausea'],
     tip: '💡 Heat pads, magnesium-rich foods, and light movement (walking, yoga) can ease cramps. Anti-inflammatory foods like ginger and turmeric may help too.',
     partnerTip: '💡 Comfort and patience are the best gifts right now. Avoid making big demands or plans. A heat pad, her favourite snacks, or just quiet company can mean more than you know.',
+    partnerDos: ['Offer warmth & comfort','Bring her favourite snacks','Be present without expectation','Give her space if she needs it'],
+    partnerAvoids: ['Big plans or demands','Pushing for intimacy','Unnecessary conflict','Taking mood shifts personally'],
   },
   'period-predicted': {
     icon: '📅',
@@ -1804,6 +1823,8 @@ const PHASE_INFO = {
     symptoms: ['Pre-period cramping may start','Spotting possible','PMS symptoms tapering off'],
     tip: '💡 Log your actual period start as soon as it arrives — even a tap of "Period Start" helps the tracker self-correct over time.',
     partnerTip: '💡 Log her actual period start as soon as it arrives — even a quick tap keeps the tracker accurate for both of you.',
+    partnerDos: ['Keep plans flexible','Check in gently','Stock comfort items at home'],
+    partnerAvoids: ['Over-scheduling this stretch','Being caught off guard by a mood shift'],
   },
   'ovulation': {
     icon: '✨',
@@ -1817,6 +1838,8 @@ const PHASE_INFO = {
     symptoms: ['Egg-white cervical mucus (clear, stretchy)','Mild one-sided pelvic twinge (Mittelschmerz)','Slight basal body temp rise (~0.2°C)','Heightened libido','Breast sensitivity','Increased energy'],
     tip: '💡 Ovulation can shift by several days due to stress, illness, or sleep disruption. A consistent waking temperature (BBT) chart is the most reliable way to confirm it.',
     partnerTip: '💡 This is often when she feels most vibrant, social, and confident. Quality time together tends to land especially well today.',
+    partnerDos: ['Plan something special','Show appreciation','Be fully present','Initiate connection'],
+    partnerAvoids: ['Being distracted or absent','Cancelling plans','Low-effort gestures'],
   },
   'ovulation-window': {
     icon: '🌸',
@@ -1830,6 +1853,8 @@ const PHASE_INFO = {
     symptoms: ['Increasing cervical mucus','Growing energy and confidence','Mild pelvic awareness','Subtle rise in body temperature'],
     tip: '💡 Cervical mucus is a free, always-available fertility indicator. As ovulation approaches it shifts from cloudy/thick → clear and stretchy like raw egg white.',
     partnerTip: '💡 She\'s likely feeling more energetic and outgoing. Plans, dates, and deeper conversations tend to land well in this window.',
+    partnerDos: ['Suggest plans & activities','Be social together','Try something new','Match her energy'],
+    partnerAvoids: ['Last-minute cancellations','Low-effort or routine gestures','Being withdrawn'],
   },
   'high-libido': {
     icon: '🔥',
@@ -1843,6 +1868,8 @@ const PHASE_INFO = {
     symptoms: ['Heightened sexual desire','Increased confidence','More social & outgoing','Elevated mood','Skin may look its best','Higher pain tolerance'],
     tip: '💡 This window overlaps with your fertile days. Whether or not conception is a goal, many people find this the best time for intimacy due to natural lubrication and heightened sensation.',
     partnerTip: '💡 This is a natural window for closeness. Whether or not conception is the goal, initiation and connection are likely to be well-received right now.',
+    partnerDos: ['Initiate closeness','Be attentive & present','Plan intimate time','Be spontaneous'],
+    partnerAvoids: ['Being inattentive or dismissive','Turning down her energy','Staying glued to your phone'],
   },
   'follicular': {
     icon: '🌱',
@@ -1856,6 +1883,8 @@ const PHASE_INFO = {
     symptoms: ['Rising energy levels','Improved mood & motivation','Sharper focus and creativity','Better sleep','Skin often clearest','Higher pain tolerance','Social & talkative'],
     tip: '💡 This is your power phase. Many people find it the best time to start new projects, have difficult conversations, or push harder in workouts. Lean into the energy.',
     partnerTip: '💡 This is her power phase. She\'ll likely be social, motivated, and up for new experiences. Great time to make plans, try something new together, or have bigger conversations.',
+    partnerDos: ['Make ambitious plans','Try new experiences together','Have deeper conversations','Match her enthusiasm'],
+    partnerAvoids: ['Low-effort or repetitive dates','Cancelling on her','Being unenthusiastic'],
   },
   'luteal': {
     icon: '🍂',
@@ -1869,6 +1898,8 @@ const PHASE_INFO = {
     symptoms: ['Bloating','Breast tenderness','Food cravings (especially carbs & sugar)','Mood swings or irritability','Fatigue','Lower back ache','Headaches','Difficulty concentrating','Sleep disruption','Heightened sensitivity'],
     tip: '💡 PMS symptoms peak in the last 5 days. Reducing salt, caffeine, and alcohol, prioritising sleep, and adding magnesium-rich foods (dark chocolate, leafy greens, nuts) can meaningfully reduce severity.',
     partnerTip: '💡 She may need more quiet time and reassurance. Don\'t take mood shifts personally — they\'re hormonal. Small acts of care and patience go a long way right now.',
+    partnerDos: ['Be patient & reassuring','Acts of service (cook, tidy, handle things)','Listen without trying to fix','Keep plans low-key'],
+    partnerAvoids: ['Starting arguments','Big social commitments','Dismissing her feelings','Taking space without explanation'],
   },
   'pms': {
     icon: '🌩️',
@@ -1882,6 +1913,8 @@ const PHASE_INFO = {
     symptoms: ['Irritability or mood swings','Anxiety or low mood','Bloating & water retention','Breast tenderness or swelling','Headaches or migraines','Fatigue & low energy','Food cravings','Acne flare-ups','Difficulty sleeping','Poor concentration','Joint or muscle aches','Feeling overwhelmed'],
     tip: '💡 Tracking your PMS window helps you plan ahead — schedule lighter social commitments, be gentler with yourself, and front-load hard tasks to earlier in your cycle. Regular aerobic exercise during this phase is one of the most evidence-backed ways to reduce severity.',
     partnerTip: '💡 Extra patience here matters more than usual. Avoid unnecessary friction, keep things low-key, and offer comfort without expecting much in return. Her period is close — things will ease soon.',
+    partnerDos: ['Extra patience, full stop','Small thoughtful gestures','Offer comfort without conditions','Keep things calm & simple'],
+    partnerAvoids: ['Criticism or confrontation','Making demands','Pointing out her mood','Jokes at her expense'],
   },
 };
 
@@ -1917,6 +1950,20 @@ function openPhaseInfo(key) {
     <div class="phase-section" style="margin-bottom:0">
       <div class="tip-box">${tip}</div>
     </div>
+    ${pm && info.partnerDos ? `
+    <div class="phase-section" style="margin-bottom:0;margin-top:16px">
+      <div class="phase-section-title">For partners</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(52,211,153,.8);margin-bottom:6px">✓ Do</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">${info.partnerDos.map(t=>`<span class="symptom-pill" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.25);color:rgba(52,211,153,.9)">${t}</span>`).join('')}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(228,77,123,.8);margin-bottom:6px">✕ Avoid</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">${info.partnerAvoids.map(t=>`<span class="symptom-pill" style="background:rgba(228,77,123,.1);border-color:rgba(228,77,123,.25);color:rgba(228,77,123,.9)">${t}</span>`).join('')}</div>
+        </div>
+      </div>
+    </div>` : ''}
     </div>
   `;
   openM('mPhase');
