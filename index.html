@@ -605,9 +605,27 @@
       .months-section-body { grid-template-columns: 1fr; }
       .legend { gap: 6px 12px; }
     }
+
+    /* ── Landscape block ─────────────────────── */
+    .landscape-block {
+      display: none;
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; text-align: center; padding: 32px;
+    }
+    @media (orientation: landscape) {
+      .landscape-block { display: flex; }
+    }
   </style>
 </head>
 <body>
+
+<div class="landscape-block">
+  <div style="font-size:42px">📱</div>
+  <div style="font-size:15px;font-weight:600;color:var(--text)">Please rotate your device</div>
+  <div style="font-size:13px;color:var(--text-muted);max-width:260px;line-height:1.5">せいり is designed for portrait mode</div>
+</div>
 
 <!-- ═══════════════════════════════════════════════
      HEADER
