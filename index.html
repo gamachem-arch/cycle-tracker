@@ -162,6 +162,7 @@
       position: relative;
       padding: 24px 22px 18px;
       border-radius: 18px 18px 0 0;
+      overflow: hidden;
       margin-bottom: 18px;
     }
     .phase-modal-icon { font-size: 28px; margin-bottom: 6px; }
@@ -426,13 +427,15 @@
       position: fixed; inset: 0; z-index: 220;
       background: rgba(0,0,0,.7);
       backdrop-filter: blur(6px);
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: flex-start; justify-content: center;
       padding: 20px;
+      overflow-y: auto;
     }
     .modal {
       background: var(--surface2); border: 1px solid var(--border);
       border-radius: 18px; padding: 22px;
       width: 100%; max-width: 380px;
+      margin: auto 0;
       animation: modalIn .18s ease;
     }
     @keyframes modalIn {
@@ -810,7 +813,7 @@
 
 <!-- Phase info modal -->
 <div class="overlay hidden" id="mPhase">
-  <div class="modal" style="padding:0;overflow:hidden">
+  <div class="modal" style="padding:0">
     <div id="mPhaseBody"></div>
     <div style="padding:0 22px 22px">
       <button class="btn btn-ghost btn-full" onclick="closeM('mPhase')" style="margin-top:16px">Got it</button>
