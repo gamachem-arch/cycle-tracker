@@ -618,6 +618,7 @@
       <circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
     </svg>
     <h1>Cycle Tracker</h1>
+    <span id="partnerBadge" class="hidden" style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--purple-faint);border:1px solid var(--purple-mid);color:var(--purple-light);letter-spacing:.3px">👥 Partner</span>
   </div>
   <div class="header-actions">
     <button class="btn btn-ghost btn-sm" onclick="openHistory()">History</button>
@@ -757,6 +758,19 @@
     </div>
     <hr class="divider">
     <button class="btn btn-rose btn-full" onclick="clearAll()">Clear All Data</button>
+    <hr class="divider">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--text)">Partner Mode</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">View cycle from your partner's perspective</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnPartnerToggle" onclick="togglePartnerMode()">Off</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="shareData()">📤 Share Data</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="openM('mImport')">📥 Import Data</button>
+    </div>
+    <div id="lastSharedRow" class="hidden" style="margin-top:8px;font-size:10px;color:var(--text-dim);text-align:center"></div>
   </div>
 </div>
 
@@ -837,6 +851,22 @@
   </div>
 </div>
 
+<!-- Import data -->
+<div class="overlay hidden" id="mImport">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Import Partner Data</span>
+      <button class="modal-close" onclick="closeM('mImport')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Paste the data string your partner shared with you.</p>
+    <textarea class="form-input" id="importPaste" rows="4" placeholder="Paste here…" style="resize:none;font-size:12px;font-family:monospace;line-height:1.4"></textarea>
+    <div class="modal-footer" style="margin-top:12px">
+      <button class="btn btn-ghost" onclick="closeM('mImport')">Cancel</button>
+      <button class="btn btn-purple" onclick="doImport()">Import</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════
      JAVASCRIPT
 ═══════════════════════════════════════════════ -->
@@ -845,7 +875,7 @@
 
 let db = {
   periods:  [],   // [{start:'YYYY-MM-DD', end:'YYYY-MM-DD'|null}]
-  settings: { cycleLength:28, periodLength:5, lutealLength:14 }
+  settings: { cycleLength:28, periodLength:5, lutealLength:14, partnerMode:false, lastShared:null }
 };
 let currentYear = new Date().getFullYear();
 const TODAY = fmt(new Date());
@@ -1177,9 +1207,15 @@ function renderMonth(month, map, now) {
 // ─── Status bar ───────────────────────────────────────────────────────────────
 
 function updateStatus(map) {
+  const pm   = db.settings.partnerMode;
   const last = lastPeriod();
   const cyc  = avgCycle();
   const lut  = db.settings.lutealLength;
+
+  // Update static labels for partner mode
+  document.querySelector('#sCycleDay').previousElementSibling.textContent = pm ? 'Her Day' : 'Cycle Day';
+  document.querySelector('#sPhase').previousElementSibling.textContent    = pm ? 'Her Phase' : 'Phase';
+  document.querySelector('#sOvulation').previousElementSibling.textContent = pm ? 'Her Ovulation' : 'Ovulation';
 
   if (!last) {
     ['sCycleDay','sPhase','sNextPeriod','sOvulation'].forEach(id => {
@@ -1244,10 +1280,14 @@ function updateStatus(map) {
 // ─── Quick bar ────────────────────────────────────────────────────────────────
 
 function syncQuickBtns() {
-  const last = lastPeriod();
+  const last   = lastPeriod();
   const active = last && !last.end;
+  const pm     = db.settings.partnerMode;
   document.getElementById('btnStart').classList.toggle('hidden', !!active);
   document.getElementById('btnEnd').classList.toggle('hidden', !active);
+  document.getElementById('btnStart').textContent = pm ? '● Her Period Start' : '● Period Start';
+  document.getElementById('btnEnd').textContent   = pm ? '◎ Her Period Ended' : '◎ End Period Today';
+  document.getElementById('partnerBadge').classList.toggle('hidden', !pm);
 }
 
 function quickStart() {
@@ -1453,6 +1493,12 @@ function openSettings() {
   document.getElementById('sCycLen').value  = db.settings.cycleLength;
   document.getElementById('sPeriLen').value = db.settings.periodLength;
   document.getElementById('sLutLen').value  = db.settings.lutealLength;
+  const btn = document.getElementById('btnPartnerToggle');
+  const pm = db.settings.partnerMode;
+  btn.textContent = pm ? 'On' : 'Off';
+  btn.style.color = pm ? 'var(--purple-light)' : '';
+  btn.style.borderColor = pm ? 'var(--purple-mid)' : '';
+  syncLastShared();
   openM('mSettings');
 }
 
@@ -1467,6 +1513,73 @@ function clearAll() {
   if (!confirm('Delete all period data? This cannot be undone.')) return;
   db.periods = [];
   persist(); closeM('mSettings'); render();
+}
+
+// ─── Partner mode ─────────────────────────────────────────────────────────────
+
+function syncLastShared() {
+  const row = document.getElementById('lastSharedRow');
+  if (!row) return;
+  const ts = db.settings.lastShared;
+  if (!ts) { row.classList.add('hidden'); return; }
+  const days = Math.floor((Date.now() - ts) / 86400000);
+  const label = days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`;
+  row.textContent = `Last shared ${label}`;
+  row.classList.remove('hidden');
+}
+
+function togglePartnerMode() {
+  db.settings.partnerMode = !db.settings.partnerMode;
+  persist();
+  const btn = document.getElementById('btnPartnerToggle');
+  if (btn) {
+    btn.textContent = db.settings.partnerMode ? 'On' : 'Off';
+    btn.style.color = db.settings.partnerMode ? 'var(--purple-light)' : '';
+    btn.style.borderColor = db.settings.partnerMode ? 'var(--purple-mid)' : '';
+  }
+  render();
+}
+
+function shareData() {
+  const raw = localStorage.getItem('ct_v1');
+  if (!raw || JSON.parse(raw).periods?.length === 0) {
+    alert('No period data to share yet. Log at least one period first.');
+    return;
+  }
+  try {
+    const encoded = 'ct1:' + btoa(unescape(encodeURIComponent(raw)));
+    navigator.clipboard.writeText(encoded).then(() => {
+      db.settings.lastShared = Date.now();
+      persist();
+      syncLastShared();
+      alert('Data copied to clipboard!\n\nPaste it in iMessage and have your partner copy it, then tap "Import Data" in their app.');
+    }).catch(() => {
+      prompt('Copy this string and send it to your partner:', encoded);
+    });
+  } catch(e) {
+    alert('Could not export data.');
+  }
+}
+
+function doImport() {
+  const raw = document.getElementById('importPaste').value.trim();
+  if (!raw) return alert('Paste a data string first.');
+  if (!raw.startsWith('ct1:')) return alert('This doesn\'t look like valid cycle data. Make sure you copied the full string.');
+  try {
+    const json = decodeURIComponent(escape(atob(raw.slice(4))));
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed.periods)) throw new Error();
+    if (!confirm(`Import ${parsed.periods.length} period entr${parsed.periods.length === 1 ? 'y' : 'ies'}? This will replace all current data.`)) return;
+    db.periods  = parsed.periods;
+    db.settings = { ...db.settings, ...parsed.settings, partnerMode: db.settings.partnerMode };
+    persist();
+    closeM('mImport');
+    closeM('mSettings');
+    render();
+    alert('Data imported successfully!');
+  } catch(e) {
+    alert('Could not read the data. Make sure you copied the full string without any edits.');
+  }
 }
 
 // ─── Day detail modal ─────────────────────────────────────────────────────────
@@ -1535,7 +1648,10 @@ function openDay(ds) {
     // Phase blurb from PHASE_INFO
     const phaseKey = info.cls;
     if (PHASE_INFO[phaseKey]) {
-      const blurb = PHASE_INFO[phaseKey].about.split('.')[0] + '.'; // first sentence
+      const pm = db.settings.partnerMode;
+      const blurb = pm
+        ? PHASE_INFO[phaseKey].partnerAbout
+        : PHASE_INFO[phaseKey].about.split('.')[0] + '.';
       rows += `<div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--text-muted);line-height:1.55">${blurb}</div>`;
     }
 
@@ -1667,81 +1783,105 @@ const PHASE_INFO = {
     icon: '🩸',
     name: 'Menstrual Phase',
     sub: 'Days 1–5 · Your period',
+    partnerSub: 'Days 1–5 · Her period',
     headerStyle: 'background: linear-gradient(135deg, #6b1a35, #a0294f)',
     about: 'The uterine lining sheds because pregnancy didn\'t occur. Estrogen and progesterone are at their lowest, triggering the bleed. Day 1 of your period is officially Day 1 of your cycle.',
+    partnerAbout: 'She\'s on her period — hormones are at their lowest and the uterine lining is shedding. Energy is typically low and physical discomfort is common.',
     duration: 'Typically 3–7 days. Cycles of 2–8 days are considered normal.',
     symptoms: ['Cramping','Bloating','Lower back pain','Fatigue','Headaches','Breast tenderness','Mood dips','Nausea'],
     tip: '💡 Heat pads, magnesium-rich foods, and light movement (walking, yoga) can ease cramps. Anti-inflammatory foods like ginger and turmeric may help too.',
+    partnerTip: '💡 Comfort and patience are the best gifts right now. Avoid making big demands or plans. A heat pad, her favourite snacks, or just quiet company can mean more than you know.',
   },
   'period-predicted': {
     icon: '📅',
     name: 'Predicted Period',
     sub: 'Forecasted based on your cycle history',
+    partnerSub: 'Forecasted based on her cycle history',
     headerStyle: 'background: linear-gradient(135deg, #4a1030, #7c2050)',
     about: 'This is when your next period is expected, calculated from your average cycle length. The more cycles you log, the more accurate this becomes.',
+    partnerAbout: 'Her period is expected around this time, based on her cycle history. She may already be feeling pre-period symptoms.',
     duration: 'Predictions improve with 3+ logged cycles.',
     symptoms: ['Pre-period cramping may start','Spotting possible','PMS symptoms tapering off'],
     tip: '💡 Log your actual period start as soon as it arrives — even a tap of "Period Start" helps the tracker self-correct over time.',
+    partnerTip: '💡 Log her actual period start as soon as it arrives — even a quick tap keeps the tracker accurate for both of you.',
   },
   'ovulation': {
     icon: '✨',
     name: 'Ovulation Day',
     sub: 'Peak fertility · ~Day 14',
+    partnerSub: 'Her peak fertility · ~Day 14',
     headerStyle: 'background: linear-gradient(135deg, #6b1050, #c2185b)',
     about: 'A surge in luteinising hormone (LH) triggers the release of a mature egg from the ovary. The egg is viable for just 12–24 hours, but sperm can survive 3–5 days — making the days before ovulation equally important for conception.',
+    partnerAbout: 'Today is her estimated ovulation day — energy and confidence typically peak, and she may be especially open to closeness and connection.',
     duration: 'The egg lives 12–24 hours after release.',
     symptoms: ['Egg-white cervical mucus (clear, stretchy)','Mild one-sided pelvic twinge (Mittelschmerz)','Slight basal body temp rise (~0.2°C)','Heightened libido','Breast sensitivity','Increased energy'],
     tip: '💡 Ovulation can shift by several days due to stress, illness, or sleep disruption. A consistent waking temperature (BBT) chart is the most reliable way to confirm it.',
+    partnerTip: '💡 This is often when she feels most vibrant, social, and confident. Quality time together tends to land especially well today.',
   },
   'ovulation-window': {
     icon: '🌸',
     name: 'Ovulation Window',
     sub: '±2 days around ovulation · High fertility',
+    partnerSub: '±2 days around ovulation · Rising energy',
     headerStyle: 'background: linear-gradient(135deg, #5a1045, #a0185a)',
     about: 'The days immediately surrounding ovulation form your fertile window. Sperm can survive inside the reproductive tract for up to 5 days, so intercourse in this window can result in fertilisation even before the egg is released.',
+    partnerAbout: 'She\'s in her fertile window — the days surrounding ovulation when energy, mood, and openness to connection are naturally rising.',
     duration: 'Roughly 5 days total (2 before + ovulation day + 2 after).',
     symptoms: ['Increasing cervical mucus','Growing energy and confidence','Mild pelvic awareness','Subtle rise in body temperature'],
     tip: '💡 Cervical mucus is a free, always-available fertility indicator. As ovulation approaches it shifts from cloudy/thick → clear and stretchy like raw egg white.',
+    partnerTip: '💡 She\'s likely feeling more energetic and outgoing. Plans, dates, and deeper conversations tend to land well in this window.',
   },
   'high-libido': {
     icon: '🔥',
     name: 'High Libido Window',
     sub: '3 days before → 1 day after ovulation',
+    partnerSub: '3 days before → 1 day after ovulation',
     headerStyle: 'background: linear-gradient(135deg, #6b2d00, #c2590a)',
     about: 'Rising oestrogen levels and the pre-ovulation LH surge act on the brain to naturally increase sexual desire. This hormonal cocktail also boosts confidence, sociability, and even physical attractiveness cues — evolution\'s way of maximising conception chances.',
+    partnerAbout: 'Hormones are peaking right now — she\'s likely feeling heightened desire, confidence, and openness to intimacy.',
     duration: 'Typically peaks 1–2 days before ovulation.',
     symptoms: ['Heightened sexual desire','Increased confidence','More social & outgoing','Elevated mood','Skin may look its best','Higher pain tolerance'],
     tip: '💡 This window overlaps with your fertile days. Whether or not conception is a goal, many people find this the best time for intimacy due to natural lubrication and heightened sensation.',
+    partnerTip: '💡 This is a natural window for closeness. Whether or not conception is the goal, initiation and connection are likely to be well-received right now.',
   },
   'follicular': {
     icon: '🌱',
     name: 'Follicular Phase',
     sub: 'Days 1–13 · Growth & renewal',
+    partnerSub: 'Days 1–13 · Her growth phase',
     headerStyle: 'background: linear-gradient(135deg, #0a3d2e, #1a6b4a)',
     about: 'Overlapping with and continuing after your period, the follicular phase is driven by rising FSH (follicle-stimulating hormone). Several follicles in the ovaries begin to mature, each containing an egg. Eventually one becomes dominant and surges ahead toward ovulation.',
+    partnerAbout: 'She\'s in her follicular phase — energy, mood, and mental clarity are all rising. This is typically her most social and motivated stretch of the cycle.',
     duration: 'Lasts from Day 1 to ovulation — variable, typically 10–16 days.',
     symptoms: ['Rising energy levels','Improved mood & motivation','Sharper focus and creativity','Better sleep','Skin often clearest','Higher pain tolerance','Social & talkative'],
     tip: '💡 This is your power phase. Many people find it the best time to start new projects, have difficult conversations, or push harder in workouts. Lean into the energy.',
+    partnerTip: '💡 This is her power phase. She\'ll likely be social, motivated, and up for new experiences. Great time to make plans, try something new together, or have bigger conversations.',
   },
   'luteal': {
     icon: '🍂',
     name: 'Luteal Phase',
     sub: 'Days 15–28 · Wind-down phase',
+    partnerSub: 'Days 15–28 · Her wind-down phase',
     headerStyle: 'background: linear-gradient(135deg, #3d2800, #6b4a00)',
     about: 'After ovulation, the empty follicle transforms into the corpus luteum, which secretes progesterone. This thickens the uterine lining in preparation for a fertilised egg. If pregnancy doesn\'t occur, progesterone drops — triggering your period and starting the cycle again.',
+    partnerAbout: 'After ovulation, progesterone rises and energy gradually winds down. She may feel more inward, tired, or emotionally sensitive — this is hormonal, not personal.',
     duration: 'The most consistent phase: typically 12–16 days.',
     symptoms: ['Bloating','Breast tenderness','Food cravings (especially carbs & sugar)','Mood swings or irritability','Fatigue','Lower back ache','Headaches','Difficulty concentrating','Sleep disruption','Heightened sensitivity'],
     tip: '💡 PMS symptoms peak in the last 5 days. Reducing salt, caffeine, and alcohol, prioritising sleep, and adding magnesium-rich foods (dark chocolate, leafy greens, nuts) can meaningfully reduce severity.',
+    partnerTip: '💡 She may need more quiet time and reassurance. Don\'t take mood shifts personally — they\'re hormonal. Small acts of care and patience go a long way right now.',
   },
   'pms': {
     icon: '🌩️',
     name: 'PMS Window',
     sub: '5 days before your period · Premenstrual phase',
+    partnerSub: '5 days before her period · Premenstrual phase',
     headerStyle: 'background: linear-gradient(135deg, #4a1540, #7c2060)',
     about: 'Premenstrual Syndrome (PMS) refers to the physical and emotional symptoms that cluster in the final days of the luteal phase, as progesterone and oestrogen both drop sharply. It affects up to 75% of people with cycles to varying degrees.',
+    partnerAbout: 'PMS symptoms are likely peaking now as hormones drop sharply in the final days before her period. Irritability, fatigue, and sensitivity are all hormonally driven.',
     duration: 'Typically the 3–7 days before bleeding starts. Symptoms resolve within 1–2 days of your period beginning.',
     symptoms: ['Irritability or mood swings','Anxiety or low mood','Bloating & water retention','Breast tenderness or swelling','Headaches or migraines','Fatigue & low energy','Food cravings','Acne flare-ups','Difficulty sleeping','Poor concentration','Joint or muscle aches','Feeling overwhelmed'],
     tip: '💡 Tracking your PMS window helps you plan ahead — schedule lighter social commitments, be gentler with yourself, and front-load hard tasks to earlier in your cycle. Regular aerobic exercise during this phase is one of the most evidence-backed ways to reduce severity.',
+    partnerTip: '💡 Extra patience here matters more than usual. Avoid unnecessary friction, keep things low-key, and offer comfort without expecting much in return. Her period is close — things will ease soon.',
   },
 };
 
@@ -1750,13 +1890,16 @@ function openPhaseInfo(key) {
   document.getElementById('legendSheet').classList.add('hidden');
   const info = PHASE_INFO[key];
   if (!info) return;
+  const pm  = db.settings.partnerMode;
+  const sub = pm && info.partnerSub ? info.partnerSub : info.sub;
+  const tip = pm && info.partnerTip ? info.partnerTip : info.tip;
   const body = document.getElementById('mPhaseBody');
   body.innerHTML = `
     <div class="phase-modal-header" style="${info.headerStyle}">
       <button class="modal-close" onclick="closeM('mPhase')" style="position:absolute;top:12px;right:14px;color:rgba(255,255,255,.7)">×</button>
       <div class="phase-modal-icon">${info.icon}</div>
       <div class="phase-modal-name">${info.name}</div>
-      <div class="phase-modal-sub">${info.sub}</div>
+      <div class="phase-modal-sub">${sub}</div>
     </div>
     <div style="padding:0 22px">
     <div class="phase-section">
@@ -1772,7 +1915,7 @@ function openPhaseInfo(key) {
       <div class="symptom-grid">${info.symptoms.map(s => `<span class="symptom-pill">${s}</span>`).join('')}</div>
     </div>
     <div class="phase-section" style="margin-bottom:0">
-      <div class="tip-box">${info.tip}</div>
+      <div class="tip-box">${tip}</div>
     </div>
     </div>
   `;
