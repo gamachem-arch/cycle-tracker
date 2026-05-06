@@ -1,0 +1,12 @@
+{
+  "name": "せいり",
+  "short_name": "せいり",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0c14",
+  "theme_color": "#0c0c14",
+  "icons": [
+    { "src": "icon.png", "sizes": "180x180", "type": "image/png" }
+  ],
+  "start_url": "."
+}
